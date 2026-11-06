@@ -338,10 +338,6 @@ details.week.now .wk-n { background: var(--mark); color: var(--mark-ink); }
 .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 12px; font-size: .875rem; width: max-content; max-width: min(92vw, 480px); opacity: 0; pointer-events: none; transition: opacity .2s ease; box-shadow: var(--shadow); }
 .toast.show { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .toast, .ring-fg { transition: none; } }
-.ro-note { padding: 10px 12px; border-radius: 10px; font-size: .875rem; background: color-mix(in srgb, var(--mark) 26%, var(--card)); border: 1px solid color-mix(in srgb, var(--mark) 70%, var(--line)); }
-.key-form { display: grid; gap: 4px; max-width: 460px; margin: 4px 0 8px; }
-.key-form label { font-weight: 700; color: var(--ink-2); }
-.key-row { display: flex; gap: 8px; }
 
 /* overview column (desktop only) */
 #today-side { display: none; }
@@ -461,11 +457,7 @@ details.week.now .wk-n { background: var(--mark); color: var(--mark-ink); }
   <section class="view" id="view-methode" aria-label="Méthode" hidden></section>
 
   <footer class="foot">
-    <span class="sync" id="sync">Synchronisation…</span>
-    <form class="key-form" id="key-form" autocomplete="off" hidden>
-      <label for="key-input">Ton code, pour cocher et sauvegarder sur cet appareil</label>
-      <div class="key-row"><input class="input" id="key-input" type="password" autocomplete="off"><button class="btn" type="submit">Activer</button></div>
-    </form>
+    <span class="sync" id="sync">Enregistré sur cet appareil.</span>
     <span>Sources : fiches ECTS 2026–27 (schakel), examenrooster du 15/10, calendrier et règles de délibération VUB.</span>
   </footer>
 </main>
@@ -526,7 +518,6 @@ var DEFAULT_TE2 = '2026-12-07T09:00';
 
 var WEEKS = [
   { id: 'w08', n: 8, from: '2026-11-02', to: '2026-11-08', theme: 'Démarrage', note: 'ADS3, Logica et Calculus tombent du 5 au 11/1 : ils se jouent avant Noël.', tasks: [
-    { id: 'w08-1', c: 'admin', m: 10, t: 'Confirmer le jour de la TE2', d: 'Canvas ou WPO, puis onglet Examens.' },
     { id: 'w08-2', c: 'admin', m: 5, t: 'Importer deadlines.ics', d: 'VUB/_plan-sauvetage : double-clic, puis Calendrier iCloud.' },
     { id: 'w08-4', c: 'calc', m: 60, t: 'Limites : slides + StudyGPS L0', d: '1a limieten_totaal, 1b continuïteit, puis le test level 0.' },
     { id: 'w08-9', c: 'ads3', m: 60, t: 'H14 + WPO H14', d: 'slides-studenten.pdf, exercices 1 à 4.' },
@@ -682,7 +673,7 @@ function normalizeSettings(raw) {
   EXAM_KEYS.forEach(function (e) { if (typeof src[e.k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(src[e.k])) ex[e.k] = src[e.k]; });
   return {
     exams: ex,
-    te2: typeof raw.te2 === 'string' ? raw.te2 : DEFAULT_TE2,
+    te2: typeof raw.te2 === 'string' && raw.te2 !== '2026-12-07T08:00' ? raw.te2 : DEFAULT_TE2,
     ads3: typeof raw.ads3 === 'string' ? raw.ads3 : ''
   };
 }
@@ -926,18 +917,17 @@ var ICON_PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7
 
 /* ---------- state ---------- */
 var S = { done: {}, sessions: {}, mastery: {}, custom: {}, settings: normalizeSettings({}), sync: 'local', canWrite: true };
-var db = null;
-var LS_STATE = 'plan-sauvetage:state:v1', LS_PREFS = 'plan-sauvetage:prefs:v1', LS_KEY = 'plan-sauvetage:key', LS_PENDING = 'plan-sauvetage:pending:v1';
+var LS_STATE = 'plan-sauvetage:state:v1', LS_PREFS = 'plan-sauvetage:prefs:v1';
 function lsGet(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
 var prefs = Object.assign({ minimum: {}, snoozed: {}, extra: {}, timer: null, calSel: '' }, lsGet(LS_PREFS, {}) || {});
 function savePrefs() { lsSet(LS_PREFS, prefs); }
-function saveLocal() { lsSet(LS_STATE, { done: S.done, sessions: S.sessions, mastery: S.mastery, custom: S.custom, settings: S.settings }); }
+function saveLocal() { lsSet(LS_STATE, { done: S.done, sessions: S.sessions, mastery: S.mastery, custom: S.custom, settings: S.settingsEdited ? S.settings : null }); }
 function loadLocal() {
   var st = lsGet(LS_STATE, null);
   if (!st) return;
   S.done = st.done || {}; S.sessions = st.sessions || {}; S.mastery = st.mastery || {}; S.custom = st.custom || {};
-  S.settings = normalizeSettings(st.settings);
+  S.settingsEdited = !!st.settings; S.settings = normalizeSettings(st.settings);
 }
 var expanded = {};
 /* open/closed state of each fold survives re-renders; desktop shows more by default */
@@ -964,133 +954,54 @@ function findTask(id) {
 }
 
 /* ---------- writes ---------- */
-var queues = {};
-function queued(path, fn) { var p = (queues[path] || Promise.resolve()).then(fn).catch(onWriteError); queues[path] = p; return p; }
-function onWriteError(err) {
-  var code = err && err.code;
-  if (code === 'forbidden') { S.canWrite = false; S.sync = 'badkey'; $('#key-form').hidden = false; renderSync(); scheduleRender(); toast('Code refusé : rien ne peut être enregistré.'); }
-  else if (code === 'invalid') toast('Cette modification a été refusée.');
-  else toast('Pas pu enregistrer. Réessaie dans un instant.');
-}
+function askPersist() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* optional */ } }
 function setDone(id, on) {
-  if (!S.canWrite) return;
   var today = todayYmd();
-  if (on) S.done[id] = { at: Date.now(), d: today }; else delete S.done[id];
-  scheduleRender();
-  if (db) queued('done/' + id, function () { return on ? db.doc('done/' + id).set({ at: Date.now(), d: today }) : db.doc('done/' + id).delete(); });
-  else saveLocal();
+  if (on) { S.done[id] = { at: Date.now(), d: today }; askPersist(); } else delete S.done[id];
+  saveLocal(); scheduleRender();
 }
 function setMastery(c, i, kind, v) {
-  if (!S.canWrite) return;
   var cur = Object.assign({}, S.mastery[c] || {});
   var row = Object.assign({ ex: 0, th: 0 }, cur[i] || {});
   row[kind] = v; cur[i] = row; S.mastery[c] = cur;
-  scheduleRender();
-  if (db) queued('mastery/' + c, function () { return db.doc('mastery/' + c).set(JSON.parse(JSON.stringify(cur))); });
-  else saveLocal();
+  saveLocal(); scheduleRender();
 }
 function saveSettings(next) {
-  S.settings = normalizeSettings(next);
-  scheduleRender();
-  if (db) return queued('settings/main', function () { return db.doc('settings/main').set(JSON.parse(JSON.stringify(S.settings))); });
-  saveLocal(); return Promise.resolve();
+  S.settings = normalizeSettings(next); S.settingsEdited = true;
+  saveLocal(); scheduleRender();
+  return Promise.resolve();
 }
 function addCustom(t) {
   var id = 'cu' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  var body = { t: t.t, c: t.c, m: t.m, date: t.date || '', at: Date.now() };
-  S.custom[id] = body; scheduleRender();
-  if (db) queued('custom/' + id, function () { return db.doc('custom/' + id).set(body); });
-  else saveLocal();
+  S.custom[id] = { t: t.t, c: t.c, m: t.m, date: t.date || '', at: Date.now() };
+  saveLocal(); scheduleRender();
 }
 function deleteCustom(id) {
-  delete S.custom[id]; var wasDone = !!S.done[id]; delete S.done[id]; scheduleRender();
-  if (db) { queued('custom/' + id, function () { return db.doc('custom/' + id).delete(); }); if (wasDone) queued('done/' + id, function () { return db.doc('done/' + id).delete(); }); }
-  else saveLocal();
+  delete S.custom[id]; delete S.done[id];
+  saveLocal(); scheduleRender();
 }
 function logSession(tm, minutes) {
-  var body = { d: todayYmd(), min: minutes, c: tm.c || 'admin', t: String(tm.t || '').slice(0, 140), task: tm.taskId || '', at: Date.now() };
   var id = 'se' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  S.sessions[id] = body; scheduleRender();
-  if (!S.canWrite) return;
-  if (db) queued('sessions/' + id, function () { return db.doc('sessions/' + id).set(body); });
-  else saveLocal();
+  S.sessions[id] = { d: todayYmd(), min: minutes, c: tm.c || 'admin', t: String(tm.t || '').slice(0, 140), task: tm.taskId || '', at: Date.now() };
+  saveLocal(); scheduleRender();
 }
 
-/* ---------- sync : Supabase, protégé par le code secret ---------- */
-var REMOTE_URL = 'https://tvjumfjnaksaeevtnzqi.supabase.co';
-/* Clé publique par conception : sans le code secret, elle ne donne accès à rien. */
-var REMOTE_KEY = 'sb_publishable_1ohUgQ3CCL3OoQylnqcVig_H-dKPbu7';
-var planKey = '', pending = lsGet(LS_PENDING, {}) || {}, pulling = false, lastSig = '';
-function lsRawGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
-function lsRawSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
+/* ---------- sauvegarde : uniquement dans ce navigateur ---------- */
+var storageOk = true;
 function renderSync() {
   var el = $('#sync'); if (!el) return;
-  var map = { loading: ['', 'Synchronisation…'], ok: ['ok', 'Synchronisé entre tes appareils.'], offline: ['warn', 'Hors ligne : tes changements sont gardés ici et partiront au retour du réseau.'], readonly: ['', 'Lecture seule sur cet appareil.'], badkey: ['warn', 'Code refusé : lecture seule.'] };
-  var v = map[S.sync] || map.loading;
-  el.className = 'sync ' + v[0];
-  el.textContent = v[1];
-}
-function rpc(name, args) {
-  return fetch(REMOTE_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: REMOTE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(args) }).then(function (r) {
-    if (r.ok) return r.status === 204 ? null : r.json();
-    var e = new Error('http ' + r.status);
-    e.code = r.status === 401 || r.status === 403 ? 'forbidden' : (r.status >= 400 && r.status < 500 && r.status !== 404 && r.status !== 408 && r.status !== 429 ? 'invalid' : 'unavailable');
-    throw e;
-  });
-}
-function flushOne(path) {
-  var body = pending[path];
-  var call = body === null ? rpc('plan_del', { p_key: planKey, p_path: path }) : rpc('plan_put', { p_key: planKey, p_path: path, p_body: body });
-  return call.then(function () { if (pending[path] === body) { delete pending[path]; lsSet(LS_PENDING, pending); } });
-}
-function pushDoc(path, body) {
-  pending[path] = body; lsSet(LS_PENDING, pending); saveLocal();
-  return flushOne(path).then(function () {
-    if (!Object.keys(pending).length && S.sync !== 'ok') { S.sync = 'ok'; renderSync(); }
-  }).catch(function (e) {
-    if (e.code === 'forbidden') throw e;
-    if (e.code === 'invalid') { delete pending[path]; lsSet(LS_PENDING, pending); throw e; }
-    S.sync = 'offline'; renderSync();
-  });
-}
-function applyDocs(docs) {
-  var next = { done: {}, sessions: {}, mastery: {}, custom: {} }, rawSettings = null;
-  function put(p, v) {
-    var i = p.indexOf('/'), c = p.slice(0, i), id = p.slice(i + 1);
-    if (p === 'settings/main') rawSettings = v;
-    else if (next[c]) { if (v === null) delete next[c][id]; else next[c][id] = v; }
-  }
-  Object.keys(docs).forEach(function (p) { put(p, docs[p]); });
-  Object.keys(pending).forEach(function (p) { put(p, pending[p]); });
-  S.done = next.done; S.sessions = next.sessions; S.mastery = next.mastery; S.custom = next.custom;
-  S.settings = normalizeSettings(rawSettings || {});
-}
-function pull() {
-  if (!planKey || pulling) return;
-  pulling = true;
-  Object.keys(pending).reduce(function (p, path) {
-    return p.then(function () { return flushOne(path).catch(function (e) { if (e.code !== 'invalid') throw e; delete pending[path]; lsSet(LS_PENDING, pending); }); });
-  }, Promise.resolve()).then(function () { return rpc('plan_get', { p_key: planKey }); }).then(function (docs) {
-    var sig = JSON.stringify(docs);
-    if (sig !== lastSig) { lastSig = sig; applyDocs(docs); saveLocal(); scheduleRender(); }
-    S.sync = 'ok'; S.canWrite = true; renderSync();
-  }).catch(function (e) {
-    if (e.code === 'forbidden') { S.canWrite = false; S.sync = 'badkey'; $('#key-form').hidden = false; scheduleRender(); }
-    else S.sync = 'offline';
-    renderSync();
-  }).then(function () { pulling = false; });
+  el.className = 'sync ' + (storageOk ? 'ok' : 'warn');
+  el.textContent = storageOk ? 'Enregistré sur cet appareil.' : 'Ce navigateur ne garde pas ta progression (navigation privée ?).';
 }
 function initStore() {
-  var m = /^#k=([A-Za-z0-9_-]{20,})$/.exec(location.hash || '');
-  if (m) { lsRawSet(LS_KEY, m[1]); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* keep hash */ } }
-  planKey = m ? m[1] : lsRawGet(LS_KEY);
-  if (!planKey) { S.canWrite = false; S.sync = 'readonly'; $('#key-form').hidden = false; renderSync(); scheduleRender(); return; }
+  try {
+    localStorage.setItem('plan-sauvetage:test', '1'); localStorage.removeItem('plan-sauvetage:test');
+    /* restes de l'ancienne version synchronisée */
+    localStorage.removeItem('plan-sauvetage:key'); localStorage.removeItem('plan-sauvetage:pending:v1');
+  } catch (e) { storageOk = false; }
+  if (/^#k=/.test(location.hash || '')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* keep hash */ } }
   loadLocal();
-  db = { doc: function (path) { return { set: function (b) { return pushDoc(path, b); }, delete: function () { return pushDoc(path, null); } }; } };
-  S.sync = 'loading'; renderSync(); scheduleRender();
-  pull();
-  setInterval(function () { if (!document.hidden) pull(); }, 60000);
-  window.addEventListener('online', pull);
+  renderSync(); scheduleRender();
 }
 
 var toastTimer = null;
@@ -1214,7 +1125,7 @@ function renderToday() {
   var examToday = examList(S.settings).some(function (e) { return e.date === today; });
   var range = plan.phase === 'cours' ? plan.range : BUDGET.blok;
   var goal = minimum ? 'jour difficile' : (plan.phase === 'apres' || examToday ? '' : 'objectif ' + range[0] / 60 + ' à ' + range[1] / 60 + ' h');
-  var html = (S.canWrite ? '' : '<p class="ro-note">Lecture seule sur cet appareil. Ouvre ton lien secret pour cocher et sauvegarder.</p>') + '<div class="card"><div class="m-top"><div class="ring-wrap">' + ring(doneN, picks.length) + '<span class="ring-num">' + doneN + '/' + picks.length + '</span></div>' +
+  var html = '<div class="card"><div class="m-top"><div class="ring-wrap">' + ring(doneN, picks.length) + '<span class="ring-num">' + doneN + '/' + picks.length + '</span></div>' +
     '<div><p class="kicker">' + kick + '</p><h2>' + esc(cap(fmtLong.format(new Date()))) + '</h2><p class="m-sub">' + esc(mins(plan.total)) + (goal ? ' · ' + esc(goal) : '') + '</p></div></div>';
   if (plan.phase === 'examens') examList(S.settings).filter(function (e) { return e.date === today; }).forEach(function (e) { html += '<div class="good"><b>' + esc(e.t) + ' aujourd\'hui</b> (' + esc(e.part) + '). Bonne chance.</div>'; });
   if (next) html += '<button type="button" class="cta" data-act="focus" data-id="' + esc(next.id) + '">' + ICON_PLAY + '<span>Commencer · ' + esc(next.t) + '</span></button>';
@@ -1437,15 +1348,9 @@ $('#fb-done').addEventListener('click', function () { finishFocus(false); });
 $('#fb-cancel').addEventListener('click', function () { prefs.timer = null; savePrefs(); clearInterval(tickH); $('#focusbar').hidden = true; releaseWake(); toast('Séance annulée.'); });
 $('#add-form').addEventListener('submit', function (e) {
   e.preventDefault();
-  if (!S.canWrite) { toast('Lecture seule.'); return; }
   var title = $('#add-title').value.trim(); if (!title) return;
   addCustom({ t: title.slice(0, 120), c: $('#add-course').value, m: Math.max(5, Math.min(300, Number($('#add-min').value) || 30)), date: $('#add-date').value || '' });
   $('#add-title').value = ''; toast('Tâche ajoutée.');
-});
-$('#key-form').addEventListener('submit', function (e) {
-  e.preventDefault();
-  var v = $('#key-input').value.trim(); if (!v) return;
-  rpc('plan_get', { p_key: v }).then(function () { lsRawSet(LS_KEY, v); location.reload(); }, function (err) { toast(err.code === 'forbidden' ? 'Code incorrect.' : 'Pas de réseau. Réessaie.'); });
 });
 document.addEventListener('submit', function (e) {
   if (e.target.id !== 'dates-form') return;
@@ -1459,7 +1364,7 @@ document.addEventListener('submit', function (e) {
 window.addEventListener('hashchange', function () { render(); window.scrollTo({ top: 0 }); });
 document.addEventListener('toggle', function (e) { var el = e.target; if (el && el.getAttribute && el.getAttribute('data-fold')) openFolds[el.getAttribute('data-fold')] = el.open; }, true);
 if (wideMq.addEventListener) wideMq.addEventListener('change', scheduleRender);
-document.addEventListener('visibilitychange', function () { if (!document.hidden) { scheduleRender(); pull(); if (prefs.timer) { updateTimer(); requestWake(); } } });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) { scheduleRender(); if (prefs.timer) { updateTimer(); requestWake(); } } });
 
 (function boot() {
   $('#add-course').innerHTML = COURSE_ORDER.concat(['admin']).map(function (c) { return '<option value="' + c + '">' + esc(COURSES[c].code) + '</option>'; }).join('');
