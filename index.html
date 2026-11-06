@@ -522,7 +522,7 @@ var EXAM_KEYS = [
 /* BA-examenrooster januari 2027 (15/10/2026), Computerwetenschappen · Schakel : I.D. 11807, 9182, 9205, 85, 6325, 9184 */
 var DEFAULT_EXAMS = { ads3e: '2027-01-05', ads3p: '2027-01-05', log: '2027-01-08', calc: '2027-01-11', scp1: '2027-01-18', ads1: '2027-01-22', dw: '2027-01-25' };
 var FINAL_DAYS = { calc: 3, scp1: 3, ads1: 3, ads3: 2, log: 3, dw: 3 };
-var DEFAULT_TE2 = '2026-12-07T08:00';
+var DEFAULT_TE2 = '2026-12-07T09:00';
 
 var WEEKS = [
   { id: 'w08', n: 8, from: '2026-11-02', to: '2026-11-08', theme: 'Démarrage', note: 'ADS3, Logica et Calculus tombent du 5 au 11/1 : ils se jouent avant Noël.', tasks: [
@@ -563,10 +563,10 @@ var WEEKS = [
     { id: 'w11-5', c: 'ads1', m: 75, t: 'H5 Sorteren 1', d: 'Bubble, insertion, selection, quick : trace + complexité.' },
     { id: 'w11-7', c: 'dw', m: 75, t: 'H4 Grafen', d: 'Euler, Hamilton. WPO seul + énoncés.' }
   ] },
-  { id: 'w12', n: 12, from: '2026-11-30', to: '2026-12-06', theme: 'Intégrales', note: 'StudyGPS lundi 7/12 à 8 h : fais-le ce week-end.', tasks: [
+  { id: 'w12', n: 12, from: '2026-11-30', to: '2026-12-06', theme: 'Intégrales', note: 'Lundi 7/12 : StudyGPS à finir avant 8 h, puis TE2 de 9 h à 11 h. Fais le StudyGPS ce week-end.', tasks: [
     { id: 'w12-1', c: 'calc', m: 60, dl: 'gps3', pre: 'w11-2', t: 'StudyGPS Afgeleiden L2', d: 'Lundi 8 h : fais-le le week-end.' },
     { id: 'w12-2', c: 'calc', m: 90, t: 'WPO 4 Integralen', d: '5.5 : 14, 18, 26 · 5.6 : 5a, 18, 26, 33, 60, 78 · 8.2 : 2, 6, 22' },
-    { id: 'w12-3', c: 'dw', m: 120, dl: 'te2', t: 'Préparer la TE2', d: 'WPO H3 et H4 seul, comme un mini-examen.' },
+    { id: 'w12-3', c: 'dw', m: 120, dl: 'te2', t: 'Préparer la TE2', d: 'Lundi 7/12, 9 h à 11 h. Vérifie la matière sur Canvas (sans doute H3 et H4), puis WPO seul, comme un mini-examen.' },
     { id: 'w12-5', c: 'ads3', m: 75, t: 'H17 B+-bomen', d: '10 clés à la main + a-d/db/index/b-tree.' },
     { id: 'w12-7', c: 'log', m: 75, t: 'Natuurlijke deductie (pred.)', d: '4 afleidingen seul : ∀I, ∀E, ∃I, ∃E.' },
     { id: 'w12-4', c: 'scp1', m: 90, t: 'SCP1 : chapitre du moment', d: 'WPO seul + 3 Dodona + un omgevingsmodel à la main.' },
@@ -688,7 +688,7 @@ function normalizeSettings(raw) {
 }
 function deadlines(settings) {
   var list = FIXED_DEADLINES.map(function (x) { return Object.assign({}, x); });
-  list.push({ id: 'te2', c: 'dw', short: 'TE2', t: 'TE2 Discrete wiskunde', at: settings.te2 || null, note: settings.te2 === DEFAULT_TE2 ? 'semaine 13, jour à confirmer' : '' });
+  list.push({ id: 'te2', c: 'dw', short: 'TE2', t: 'TE2 Discrete wiskunde', at: settings.te2 || null, note: settings.te2 === DEFAULT_TE2 ? "jusqu'à 11 h" : '' });
   list.push({ id: 'ads3proj', c: 'ads3', short: 'PROJ', t: 'Projet ADS3', at: settings.ads3 || null, note: settings.ads3 ? '' : 'sort après H16–H17' });
   EXAM_KEYS.forEach(function (e) {
     var v = settings.exams[e.k];
