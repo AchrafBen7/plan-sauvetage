@@ -196,6 +196,9 @@ h3 { font-family: var(--f-display); font-weight: 600; font-size: 1.0625rem; line
 .due.hot { background: var(--mark); color: var(--mark-ink); }
 .due.warm { background: var(--crit-soft); color: var(--crit); }
 .late { flex: 0 0 auto; font-family: var(--f-mono); font-size: .6875rem; color: var(--crit); white-space: nowrap; }
+.prog { flex: 0 0 auto; font-family: var(--f-mono); font-size: .75rem; font-weight: 700; padding: 0 6px; border-radius: 4px; background: var(--pen-soft); color: var(--pen); white-space: nowrap; }
+.prog-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; }
+.prog-ctl .note-in { height: 30px; flex: 1 1 180px; font-size: .8125rem; }
 
 /* folds */
 details.fold > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -519,7 +522,7 @@ var DEFAULT_TE2 = '2026-12-07T09:00';
 var WEEKS = [
   { id: 'w08', n: 8, from: '2026-11-02', to: '2026-11-08', theme: 'Démarrage', note: 'ADS3, Logica et Calculus tombent du 5 au 11/1 : ils se jouent avant Noël.', tasks: [
     { id: 'w08-2', c: 'admin', m: 5, t: 'Importer deadlines.ics', d: 'VUB/_plan-sauvetage : double-clic, puis Calendrier iCloud.' },
-    { id: 'w08-4', c: 'calc', m: 60, t: 'Limites : slides + StudyGPS L0', d: '1a limieten_totaal, 1b continuïteit, puis le test level 0.' },
+    { id: 'w08-4', c: 'calc', m: 150, t: 'Limites : slides + StudyGPS L0', d: '1a limieten_totaal (53 dia), 1b continuïteit (17 dia), puis le test level 0.' },
     { id: 'w08-9', c: 'ads3', m: 60, t: 'H14 + WPO H14', d: 'slides-studenten.pdf, exercices 1 à 4.' },
     { id: 'w08-6', c: 'log', m: 120, t: 'Diagnostic : TE 2025 en 1 h 30', d: '2526_TE_logica.pdf sans notes, puis corrige (slides 2.3 à 2.6).' },
     { id: 'w08-5', c: 'scp1', m: 75, t: 'H5 Lijsten', d: 'WPO H5 seul + 3 Dodona.' },
@@ -527,7 +530,7 @@ var WEEKS = [
     { id: 'w08-8', c: 'ads1', m: 60, t: 'H3 Positionele lijsten', d: 'Trace add et delete (vector, enkel, dubbel) + complexités.' }
   ] },
   { id: 'w09', n: 9, from: '2026-11-09', to: '2026-11-15', theme: 'Limites', note: 'Mercredi 11/11 férié : grosse séance.', tasks: [
-    { id: 'w09-1', c: 'calc', m: 90, t: 'WPO 1 Limieten', d: '2.2 : 21, 29, 33, 49 · 2.3 : 21, 50 · 2.4 : 25, 36, 55, 59 · 2.5 : 26 · 2.6 : 40 · 2.7 : 32, 33' },
+    { id: 'w09-1', c: 'calc', m: 90, pre: 'w08-4', t: 'WPO 1 Limieten', d: '2.2 : 21, 29, 33, 49 · 2.3 : 21, 50 · 2.4 : 25, 36, 55, 59 · 2.5 : 26 · 2.6 : 40 · 2.7 : 32, 33' },
     { id: 'w09-4', c: 'ads3', m: 45, t: 'Lire disk.rkt + file-system.rkt', d: 'Dans a-d/disk. La base du futur projet.' },
     { id: 'w09-6', c: 'log', m: 75, t: 'Predikaatlogica : syntaxis', d: 'Oefeningen Predikaatlogica §1 : 1 à 8.' },
     { id: 'w09-2', c: 'scp1', m: 90, t: 'H6 Hogere orde', d: 'map, filter, accumulate, lambda, let. WPO seul + 3 Dodona.' },
@@ -818,10 +821,11 @@ function planForDay(ymd, st, opts) {
         items.push(Object.assign({}, t, { wk: w.id, overdue: i !== wi, due: at, done: isDone, score: score, hard: hard }));
       });
     });
-    items.forEach(function (it) {
+    /* chains (slides, then WPO, then StudyGPS): a few passes settle them */
+    for (var pass = 0; pass < 3; pass++) items.forEach(function (it) {
       if (!it.pre || it.done) return;
       var p = items.filter(function (x) { return x.id === it.pre; })[0];
-      if (p && !p.done && p.score > it.score) { p.score = it.score - 1e-7; p.prereq = true; p.hard = it.hard; }
+      if (p && !p.done && p.score > it.score) { p.score = it.score - 1e-7; p.prereq = true; p.hard = p.hard || it.hard; }
     });
   } else if (phase === 'vacances' || phase === 'examens') {
     var day = buildBlok(st.settings).filter(function (x) { return x.date === ymd; })[0];
@@ -842,6 +846,15 @@ function planForDay(ymd, st, opts) {
     if (t.date && t.date > ymd) return;
     var score = t.date === ymd ? 0.5 : (t.date && t.date < ymd ? 2.5 : 2);
     items.push(Object.assign({}, t, { custom: true, done: doneToday(t.id), overdue: !!(t.date && t.date < ymd), score: score }));
+  });
+  /* partial progress: fewer minutes left, and an unfinished task comes back first */
+  var prog = st.progress || {};
+  items.forEach(function (it) {
+    var p = prog[it.id];
+    if (it.done || !p || !(p.p > 0)) return;
+    it.prog = p.p; it.note = p.note || ''; it.m0 = it.m || 30;
+    it.m = Math.max(5, Math.round(it.m0 * (1 - p.p) / 5) * 5);
+    if (!it.blok && it.score > 0.95) it.score = 0.95;
   });
   var snoozed = opts.snoozed || [];
   items.forEach(function (it) { if (!it.done && snoozed.indexOf(it.id) >= 0) { it.score += 10; it.snoozed = true; } });
@@ -916,17 +929,17 @@ function ring(done, total) {
 var ICON_PLAY = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z"/></svg>';
 
 /* ---------- state ---------- */
-var S = { done: {}, sessions: {}, mastery: {}, custom: {}, settings: normalizeSettings({}), sync: 'local', canWrite: true };
+var S = { done: {}, sessions: {}, mastery: {}, custom: {}, progress: {}, settings: normalizeSettings({}), sync: 'local', canWrite: true };
 var LS_STATE = 'plan-sauvetage:state:v1', LS_PREFS = 'plan-sauvetage:prefs:v1';
 function lsGet(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
 var prefs = Object.assign({ minimum: {}, snoozed: {}, extra: {}, timer: null, calSel: '' }, lsGet(LS_PREFS, {}) || {});
 function savePrefs() { lsSet(LS_PREFS, prefs); }
-function saveLocal() { lsSet(LS_STATE, { done: S.done, sessions: S.sessions, mastery: S.mastery, custom: S.custom, settings: S.settingsEdited ? S.settings : null }); }
+function saveLocal() { lsSet(LS_STATE, { done: S.done, sessions: S.sessions, mastery: S.mastery, custom: S.custom, progress: S.progress, settings: S.settingsEdited ? S.settings : null }); }
 function loadLocal() {
   var st = lsGet(LS_STATE, null);
   if (!st) return;
-  S.done = st.done || {}; S.sessions = st.sessions || {}; S.mastery = st.mastery || {}; S.custom = st.custom || {};
+  S.done = st.done || {}; S.sessions = st.sessions || {}; S.mastery = st.mastery || {}; S.custom = st.custom || {}; S.progress = st.progress || {};
   S.settingsEdited = !!st.settings; S.settings = normalizeSettings(st.settings);
 }
 var expanded = {};
@@ -935,11 +948,28 @@ var openFolds = {};
 function foldAttr(key, byDefault) { return (openFolds[key] != null ? openFolds[key] : byDefault) ? ' open' : ''; }
 var wideMq = window.matchMedia('(min-width: 900px)');
 function isWide() { return wideMq.matches; }
+/* where Achraf stopped, as reported in chat (a device's own entry wins) */
+var DEFAULT_PROGRESS = { 'w08-4': { p: 0.25, note: 'dia 20 : formele definitie (ε-δ)', d: '2026-11-12' } };
+function progressMap() { return Object.assign({}, DEFAULT_PROGRESS, S.progress); }
+function progressOf(id) { return S.progress[id] || DEFAULT_PROGRESS[id] || null; }
+function fracLabel(p) { return p >= 0.75 ? '¾' : p >= 0.5 ? '½' : '¼'; }
+function setProgress(id, v) {
+  var cur = progressOf(id) || {};
+  S.progress[id] = { p: v, note: v > 0 ? (cur.note || '') : '', d: todayYmd() };
+  saveLocal(); scheduleRender();
+}
+function setNote(id, txt) {
+  var cur = progressOf(id) || { p: 0 };
+  S.progress[id] = { p: cur.p || 0, note: String(txt || '').trim().slice(0, 80), d: todayYmd() };
+  saveLocal(); scheduleRender();
+}
 function customList() { return Object.keys(S.custom).map(function (id) { var x = S.custom[id]; return { id: id, t: x.t, c: x.c, m: x.m, date: x.date || '', at: x.at || 0 }; }).sort(function (a, b) { return a.at - b.at; }); }
 function activeDays() {
   var s = {};
   Object.keys(S.sessions).forEach(function (k) { var x = S.sessions[k]; if (x && x.d) s[x.d] = true; });
   Object.keys(S.done).forEach(function (k) { var x = S.done[k]; if (x && x.d) s[x.d] = true; });
+  var pm = progressMap();
+  Object.keys(pm).forEach(function (k) { var x = pm[k]; if (x && x.d && x.p > 0) s[x.d] = true; });
   return s;
 }
 function streakOf(set, today) { var n = 0, d = set[today] ? today : addDays(today, -1); while (set[d]) { n++; d = addDays(d, -1); } return n; }
@@ -1022,8 +1052,14 @@ function taskRow(t, o) {
   var key = (o.key || 'x') + '-' + t.id;
   var extra = '';
   if (at && !done && !missed) { var di = dueInfo(at); extra += '<span class="due ' + di.cls + '">' + esc(di.txt) + '</span>'; }
-  if (t.prereq && !done) extra += '<span class="due warm">avant le test</span>';
-  if (t.overdue && !done && !missed) extra += '<span class="late">retard</span>';
+  var pr = done || missed ? null : progressOf(t.id);
+  var base = t.m0 || t.m, started = !!(pr && pr.p > 0);
+  if (started) extra += '<span class="prog">' + fracLabel(pr.p) + '</span>';
+  else if (t.prereq && !done) extra += '<span class="due warm">d\'abord</span>';
+  else if (t.overdue && !done && !missed) extra += '<span class="late">retard</span>';
+  var progCtl = done || missed ? '' : '<div class="prog-ctl"><span class="lv-lab">Où j\'en suis</span><span class="lv" role="group" aria-label="Avancement">' +
+    [[0, '0'], [0.25, '¼'], [0.5, '½'], [0.75, '¾']].map(function (v) { return '<button type="button" data-act="prog" data-id="' + esc(t.id) + '" data-v="' + v[0] + '" aria-pressed="' + ((pr ? pr.p || 0 : 0) === v[0]) + '" aria-label="Avancement ' + v[1] + '">' + v[1] + '</button>'; }).join('') +
+    '</span><input class="input note-in" id="note-' + esc(key) + '" data-id="' + esc(t.id) + '" maxlength="80" placeholder="Où tu t\'es arrêté (ex. dia 20)" value="' + esc(pr ? pr.note || '' : '') + '"></div>';
   if (missed) extra += '<span class="late">manqué</span>';
   var tools = '';
   if (!done && !missed && o.snooze) tools += '<button type="button" class="link" data-act="snooze" data-id="' + esc(t.id) + '">Pas aujourd\'hui</button>';
@@ -1032,9 +1068,9 @@ function taskRow(t, o) {
   var label = (t.slot ? t.slot + ' · ' : '') + t.t;
   return '<li class="task' + (done ? ' is-done' : '') + (missed ? ' is-missed' : '') + '">' +
     '<input class="cb" type="checkbox" id="cb-' + esc(key) + '" data-act="toggle" data-id="' + esc(t.id) + '"' + (done ? ' checked' : '') + (S.canWrite ? '' : ' disabled') + ' aria-label="' + esc(label) + '">' +
-    '<button type="button" class="t-main" data-act="expand" data-key="' + esc(key) + '" aria-expanded="' + open + '">' + badge(t.c) + '<span class="t-title">' + esc(label) + '</span>' + extra + '<span class="t-min">' + esc(mins(t.m)) + '</span></button>' +
+    '<button type="button" class="t-main" data-act="expand" data-key="' + esc(key) + '" aria-expanded="' + open + '">' + badge(t.c) + '<span class="t-title">' + esc(label) + '</span>' + extra + '<span class="t-min">' + esc(started ? 'reste ' + mins(Math.max(5, Math.round(base * (1 - pr.p) / 5) * 5)) : mins(base)) + '</span></button>' +
     (!done && !missed ? '<button type="button" class="play" data-act="focus" data-id="' + esc(t.id) + '" aria-label="25 minutes : ' + esc(t.t) + '">' + ICON_PLAY + '</button>' : '<span class="play-ph"></span>') +
-    '<div class="t-more"' + (open ? '' : ' hidden') + '>' + (t.d ? '<p>' + esc(t.d) + '</p>' : '') + (tools ? '<div class="t-tools">' + tools + '</div>' : '') + '</div></li>';
+    '<div class="t-more"' + (open ? '' : ' hidden') + '>' + (t.d ? '<p>' + esc(t.d) + '</p>' : '') + progCtl + (tools ? '<div class="t-tools">' + tools + '</div>' : '') + '</div></li>';
 }
 
 function examGroups() {
@@ -1119,7 +1155,7 @@ function routeHtml(today) {
 function renderToday() {
   var today = todayYmd();
   var minimum = !!(prefs.minimum && prefs.minimum[today]);
-  var plan = planForDay(today, { now: new Date(), settings: S.settings, done: S.done, custom: customList() }, { minimum: minimum, snoozed: snoozedToday(), extra: (prefs.extra && prefs.extra[today]) || 0 });
+  var plan = planForDay(today, { now: new Date(), settings: S.settings, done: S.done, custom: customList(), progress: progressMap() },{ minimum: minimum, snoozed: snoozedToday(), extra: (prefs.extra && prefs.extra[today]) || 0 });
   var picks = plan.picks, doneN = picks.filter(function (p) { return p.done; }).length, next = picks.filter(function (p) { return !p.done; })[0];
   var kick = plan.phase === 'cours' ? 'Ta mission' : plan.phase === 'vacances' ? 'Blok' : plan.phase === 'examens' ? 'Examens' : 'Terminé';
   var examToday = examList(S.settings).some(function (e) { return e.date === today; });
@@ -1128,7 +1164,7 @@ function renderToday() {
   var html = '<div class="card"><div class="m-top"><div class="ring-wrap">' + ring(doneN, picks.length) + '<span class="ring-num">' + doneN + '/' + picks.length + '</span></div>' +
     '<div><p class="kicker">' + kick + '</p><h2>' + esc(cap(fmtLong.format(new Date()))) + '</h2><p class="m-sub">' + esc(mins(plan.total)) + (goal ? ' · ' + esc(goal) : '') + '</p></div></div>';
   if (plan.phase === 'examens') examList(S.settings).filter(function (e) { return e.date === today; }).forEach(function (e) { html += '<div class="good"><b>' + esc(e.t) + ' aujourd\'hui</b> (' + esc(e.part) + '). Bonne chance.</div>'; });
-  if (next) html += '<button type="button" class="cta" data-act="focus" data-id="' + esc(next.id) + '">' + ICON_PLAY + '<span>Commencer · ' + esc(next.t) + '</span></button>';
+  if (next) html += '<button type="button" class="cta" data-act="focus" data-id="' + esc(next.id) + '">' + ICON_PLAY + '<span>' + (next.prog ? 'Reprendre · ' + esc(next.t) + (next.note ? ' · ' + esc(next.note) : '') : 'Commencer · ' + esc(next.t)) + '</span></button>';
   else if (picks.length) html += '<div class="good"><b>Mission accomplie.</b> Tu peux t\'arrêter là.</div>';
   else html += '<div class="good">Rien de prévu aujourd\'hui.</div>';
   if (picks.length) html += '<ul class="tasks">' + picks.map(function (t) { return taskRow(t, { key: 'td', snooze: !t.done, forceDone: t.done, openWide: !t.done }); }).join('') + '</ul>';
@@ -1321,6 +1357,7 @@ function finishFocus(natural) {
 document.addEventListener('change', function (e) {
   var el = e.target;
   if (el.matches && el.matches('input.cb[data-act="toggle"]')) setDone(el.getAttribute('data-id'), el.checked);
+  else if (el.matches && el.matches('input.note-in')) setNote(el.getAttribute('data-id'), el.value);
 });
 document.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('#dates-form')) formDirty = true; });
 document.addEventListener('click', function (e) {
@@ -1336,6 +1373,7 @@ document.addEventListener('click', function (e) {
   else if (act === 'extra') { var ex = {}; ex[today] = ((prefs.extra && prefs.extra[today]) || 0) + 1; prefs.extra = ex; savePrefs(); render(); }
   else if (act === 'del') { deleteCustom(id); toast('Tâche supprimée.'); }
   else if (act === 'cal') { prefs.calSel = el.getAttribute('data-d'); savePrefs(); render(); }
+  else if (act === 'prog') setProgress(id, Number(el.getAttribute('data-v')));
   else if (act === 'lvl') setMastery(el.getAttribute('data-c'), Number(el.getAttribute('data-i')), el.getAttribute('data-k'), Number(el.getAttribute('data-v')));
   else if (act === 'copy') {
     var pre = $('#club-text');
