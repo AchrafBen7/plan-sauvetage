@@ -827,6 +827,20 @@ function planForDay(ymd, st, opts) {
       var p = items.filter(function (x) { return x.id === it.pre; })[0];
       if (p && !p.done && p.score > it.score) { p.score = it.score - 1e-7; p.prereq = true; p.hard = p.hard || it.hard; }
     });
+    /* spread an urgent chain over the days left: the test on its last day, each step before it one day earlier.
+       Only the steps due today (or already late) go past the daily budget. */
+    items.forEach(function (it) {
+      if (!it.due || it.done || !it.hard) return;
+      var lastDay = ymdOf(it.due);
+      if (it.due.getHours() < 12) lastDay = addDays(lastDay, -1);
+      var cur = it, depth = 0;
+      while (cur && depth < 6) {
+        cur.hard = addDays(lastDay, -depth) <= ymd;
+        var preId = cur.pre;
+        cur = preId ? items.filter(function (x) { return x.id === preId && !x.done; })[0] : null;
+        depth++;
+      }
+    });
   } else if (phase === 'vacances' || phase === 'examens') {
     var day = buildBlok(st.settings).filter(function (x) { return x.date === ymd; })[0];
     if (day) day.blocks.forEach(function (b, j) {
