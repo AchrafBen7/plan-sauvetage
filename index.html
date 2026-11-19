@@ -540,7 +540,7 @@ var WEEKS = [
     { id: 'w09-5', c: 'ads1', m: 60, t: 'H4 Stacks en queues', d: 'Vectorieel, gelinkt, circulair. WPO seul.' }
   ] },
   { id: 'w10', n: 10, from: '2026-11-16', to: '2026-11-22', theme: 'StudyGPS n°1', note: 'Vendredi 20/11 férié VUB, mais deadline StudyGPS à 17 h.', tasks: [
-    { id: 'w10-1', c: 'calc', m: 120, dl: 'gps1', pre: 'w09-1', t: 'StudyGPS Limieten L1', d: '3 tests possibles, ton meilleur résultat compte. Un premier juste après les slides, un autre après le WPO 1.' },
+    { id: 'w10-1', c: 'calc', m: 120, dl: 'gps1', pre: 'w09-1', t: 'StudyGPS Limieten L1', d: '3 tests, ton meilleur score sur 20 compte. Test 1 juste après le WPO 1, test 2 après avoir revu tes erreurs, test 3 seulement sous 15/20.' },
     { id: 'w10-2', c: 'calc', m: 90, t: 'WPO 2 Afgeleiden', d: '3.3 : 13 · 3.5 : 70, 84, 93 · 3.6 : 19, 30, 37, 45, 55, 63 · 3.7 : 2, 12, 29' },
     { id: 'w10-4', c: 'ads3', m: 60, t: 'WPO ADS3 refaits seul', d: 'Disk/block, encoding, file-system.' },
     { id: 'w10-6', c: 'log', m: 75, t: 'Predikaatlogica : semantiek', d: 'Oefeningen §2 : 1 à 5.' },
@@ -827,12 +827,12 @@ function planForDay(ymd, st, opts) {
       var p = items.filter(function (x) { return x.id === it.pre; })[0];
       if (p && !p.done && p.score > it.score) { p.score = it.score - 1e-7; p.prereq = true; p.hard = p.hard || it.hard; }
     });
-    /* spread an urgent chain over the days left: the test on its last day, each step before it one day earlier.
+    /* spread an urgent chain over the days left, keeping a spare day before the deadline
+       (business can take a whole day): the test the day before, each step before it one day earlier.
        Only the steps due today (or already late) go past the daily budget. */
     items.forEach(function (it) {
       if (!it.due || it.done || !it.hard) return;
-      var lastDay = ymdOf(it.due);
-      if (it.due.getHours() < 12) lastDay = addDays(lastDay, -1);
+      var lastDay = addDays(ymdOf(it.due), it.due.getHours() < 12 ? -2 : -1);
       var cur = it, depth = 0;
       while (cur && depth < 6) {
         cur.hard = addDays(lastDay, -depth) <= ymd;
