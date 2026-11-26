@@ -501,9 +501,10 @@ var BUDGET = { weekday: [60, 120], weekend: [120, 180], blok: [420, 600] };
 
 var FIXED_DEADLINES = [
   { id: 'gps1', c: 'calc', short: 'GPS', t: 'StudyGPS Limieten L1', at: '2026-11-20T17:00' },
-  { id: 'gps2', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L1', at: '2026-11-30T08:00', note: 'reporté · jour et heure à confirmer sur Canvas' },
-  { id: 'gps3', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L2', at: '2026-12-07T08:00' },
-  { id: 'gps4', c: 'calc', short: 'GPS', t: 'StudyGPS Integralen L1', at: '2026-12-14T08:00' }
+  /* reportées par l'annonce Canvas du 26/11 (un WPO était tombé) */
+  { id: 'gps2', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L1', at: '2026-12-01T08:00' },
+  { id: 'gps3', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L2', at: '2026-12-08T08:00' },
+  { id: 'gps4', c: 'calc', short: 'GPS', t: 'StudyGPS Integralen L1', at: '2026-12-15T08:00' }
 ];
 var EXAM_KEYS = [
   { k: 'ads3e', c: 'ads3', t: 'ADS3 · écrit', time: '09:00', part: '9 h écrit' },
@@ -549,8 +550,8 @@ var WEEKS = [
     { id: 'w10-5', c: 'ads1', m: 60, t: 'H4 Heaps', d: 'Trace insert et delete (sift-up, sift-down) sur 8 clés.' },
     { id: 'w10-7', c: 'dw', m: 75, t: 'H3 : congruenties, CRT', d: "Modulair rekenen, φ d'Euler. WPO seul." }
   ] },
-  { id: 'w11', n: 11, from: '2026-11-23', to: '2026-11-29', theme: 'Dérivées', note: 'StudyGPS Afgeleiden reporté (lundi 30/11 ?). Projet ADS3 sorti : dimanche 20/12, 23 h 59.', tasks: [
-    { id: 'w11-1', c: 'calc', m: 60, dl: 'gps2', pre: 'w10-2', t: 'StudyGPS Afgeleiden L1', d: "Slides afgeleiden1 et WPO 2, puis un test level 0 pour t'échauffer et le test level 1. 3 tests, ton meilleur score compte." },
+  { id: 'w11', n: 11, from: '2026-11-23', to: '2026-11-29', theme: 'Dérivées', note: 'StudyGPS Afgeleiden L1 : mardi 1/12 à 8 h. Projet ADS3 sorti : dimanche 20/12, 23 h 59.', tasks: [
+    { id: 'w11-1', c: 'calc', m: 60, dl: 'gps2', pre: 'w10-2', t: 'StudyGPS Afgeleiden L1', d: "Slides Afgeleiden1, Afgeleiden2 et Inverse functie (versions _annot), WPO 2, puis un test level 0 pour t'échauffer et le test level 1. 3 tests, ton meilleur score compte." },
     { id: 'w11-2', c: 'calc', m: 90, t: 'WPO 3 Toepassingen', d: '4.1 : 25, 42, 55 · 4.2 : 4, (10), 15 · 4.3 : (5), 17, 32 · 4.4 : 29, (40), 64 · 4.5 : 4, 12, 24' },
     { id: 'w11-4', c: 'ads3', m: 60, t: 'H16 Externe opslag', d: 'Slides H16 + a-d/db/table.' },
     { id: 'w11-8', c: 'ads3', m: 120, t: 'Projet ADS3 : démarrer', d: "Lis l'opgave en entier, puis fais tourner main.rkt tel quel. Note tes questions pour l'assistant. IA interdite pour cette taak (opgave, 5.1)." },
@@ -559,8 +560,8 @@ var WEEKS = [
     { id: 'w11-5', c: 'ads1', m: 75, t: 'H5 Sorteren 1', d: 'Bubble, insertion, selection, quick : trace + complexité.' },
     { id: 'w11-7', c: 'dw', m: 75, t: 'H4 Grafen', d: 'Euler, Hamilton. WPO seul + énoncés.' }
   ] },
-  { id: 'w12', n: 12, from: '2026-11-30', to: '2026-12-06', theme: 'Intégrales', note: 'Lundi 7/12 : StudyGPS à finir avant 8 h, puis TE2 de 9 h à 11 h. Fais le StudyGPS ce week-end.', tasks: [
-    { id: 'w12-1', c: 'calc', m: 60, dl: 'gps3', pre: 'w11-2', t: 'StudyGPS Afgeleiden L2', d: 'Lundi 8 h : fais-le le week-end.' },
+  { id: 'w12', n: 12, from: '2026-11-30', to: '2026-12-06', theme: 'Intégrales', note: 'Lundi 7/12 : TE2 de 9 h à 11 h. StudyGPS Afgeleiden L2 : mardi 8/12 à 8 h.', tasks: [
+    { id: 'w12-1', c: 'calc', m: 60, dl: 'gps3', pre: 'w11-2', t: 'StudyGPS Afgeleiden L2', d: 'Mardi 8/12 à 8 h. Slides Afgeleiden3 et WPO 3, puis un level 0 et le test.' },
     { id: 'w12-5', c: 'ads3', m: 75, t: 'H17 B+-bomen', d: '10 clés à la main + a-d/db/index/b-tree.' },
     { id: 'w12-2', c: 'calc', m: 90, t: 'WPO 4 Integralen', d: '5.5 : 14, 18, 26 · 5.6 : 5a, 18, 26, 33, 60, 78 · 8.2 : 2, 6, 22' },
     { id: 'w12-3', c: 'dw', m: 120, dl: 'te2', t: 'Préparer la TE2', d: 'Lundi 7/12, 9 h à 11 h. Vérifie la matière sur Canvas (sans doute H3 et H4), puis WPO seul, comme un mini-examen.' },
@@ -571,8 +572,8 @@ var WEEKS = [
     { id: 'w12-6', c: 'ads1', m: 75, t: 'H5 Sorteren 2', d: 'Merge, heap, radix, counting, bucket, borne n log n.' },
     { id: 'w12-8', c: 'admin', m: 10, t: 'Rooster définitif', d: 'Vérifie dates et locaux, puis onglet Examens.' }
   ] },
-  { id: 'w13', n: 13, from: '2026-12-07', to: '2026-12-13', theme: 'DV et lambda', note: 'StudyGPS lundi 14/12 à 8 h : fais-le ce week-end.', tasks: [
-    { id: 'w13-1', c: 'calc', m: 60, dl: 'gps4', pre: 'w12-2', t: 'StudyGPS Integralen L1', d: 'Lundi 8 h : fais-le le week-end.' },
+  { id: 'w13', n: 13, from: '2026-12-07', to: '2026-12-13', theme: 'DV et lambda', note: 'StudyGPS Integralen L1 : mardi 15/12 à 8 h.', tasks: [
+    { id: 'w13-1', c: 'calc', m: 60, dl: 'gps4', pre: 'w12-2', t: 'StudyGPS Integralen L1', d: 'Mardi 15/12 à 8 h. Après le WPO 4 : un level 0, puis le test.' },
     { id: 'w13-2', c: 'calc', m: 75, t: 'WPO 5 DV 1re orde', d: 'Diffvgln 1 a, c · 2 a, c · 3 c · 4 c, d (avec le schéma DV).' },
     { id: 'w13-5', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 3', d: 'But de la semaine : une version qui tourne avec main.rkt.' },
     { id: 'w13-8', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 4', d: "Reprends là où tu t'es arrêté, et marque où tu en es avec ¼ ½ ¾." },
