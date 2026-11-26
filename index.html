@@ -501,7 +501,7 @@ var BUDGET = { weekday: [60, 120], weekend: [120, 180], blok: [420, 600] };
 
 var FIXED_DEADLINES = [
   { id: 'gps1', c: 'calc', short: 'GPS', t: 'StudyGPS Limieten L1', at: '2026-11-20T17:00' },
-  { id: 'gps2', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L1', at: '2026-11-27T17:00' },
+  { id: 'gps2', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L1', at: '2026-11-30T08:00', note: 'reporté · jour et heure à confirmer sur Canvas' },
   { id: 'gps3', c: 'calc', short: 'GPS', t: 'StudyGPS Afgeleiden L2', at: '2026-12-07T08:00' },
   { id: 'gps4', c: 'calc', short: 'GPS', t: 'StudyGPS Integralen L1', at: '2026-12-14T08:00' }
 ];
@@ -518,6 +518,7 @@ var EXAM_KEYS = [
 var DEFAULT_EXAMS = { ads3e: '2027-01-05', ads3p: '2027-01-05', log: '2027-01-08', calc: '2027-01-11', scp1: '2027-01-18', ads1: '2027-01-22', dw: '2027-01-25' };
 var FINAL_DAYS = { calc: 3, scp1: 3, ads1: 3, ads3: 2, log: 3, dw: 3 };
 var DEFAULT_TE2 = '2026-12-07T09:00';
+var DEFAULT_ADS3 = '2026-12-20T23:59'; /* opgave « B+-tree Sibling Pointers », dépôt sur Canvas */
 
 var WEEKS = [
   { id: 'w08', n: 8, from: '2026-11-02', to: '2026-11-08', theme: 'Démarrage', note: 'ADS3, Logica et Calculus tombent du 5 au 11/1 : ils se jouent avant Noël.', tasks: [
@@ -548,10 +549,11 @@ var WEEKS = [
     { id: 'w10-5', c: 'ads1', m: 60, t: 'H4 Heaps', d: 'Trace insert et delete (sift-up, sift-down) sur 8 clés.' },
     { id: 'w10-7', c: 'dw', m: 75, t: 'H3 : congruenties, CRT', d: "Modulair rekenen, φ d'Euler. WPO seul." }
   ] },
-  { id: 'w11', n: 11, from: '2026-11-23', to: '2026-11-29', theme: 'Dérivées', note: 'StudyGPS vendredi 27/11 à 17 h.', tasks: [
-    { id: 'w11-1', c: 'calc', m: 60, dl: 'gps2', pre: 'w10-2', t: 'StudyGPS Afgeleiden L1', d: 'Après le WPO 2 au niveau 3.' },
+  { id: 'w11', n: 11, from: '2026-11-23', to: '2026-11-29', theme: 'Dérivées', note: 'StudyGPS Afgeleiden reporté (lundi 30/11 ?). Projet ADS3 sorti : dimanche 20/12, 23 h 59.', tasks: [
+    { id: 'w11-1', c: 'calc', m: 60, dl: 'gps2', pre: 'w10-2', t: 'StudyGPS Afgeleiden L1', d: "Slides afgeleiden1 et WPO 2, puis un test level 0 pour t'échauffer et le test level 1. 3 tests, ton meilleur score compte." },
     { id: 'w11-2', c: 'calc', m: 90, t: 'WPO 3 Toepassingen', d: '4.1 : 25, 42, 55 · 4.2 : 4, (10), 15 · 4.3 : (5), 17, 32 · 4.4 : 29, (40), 64 · 4.5 : 4, 12, 24' },
     { id: 'w11-4', c: 'ads3', m: 60, t: 'H16 Externe opslag', d: 'Slides H16 + a-d/db/table.' },
+    { id: 'w11-8', c: 'ads3', m: 120, t: 'Projet ADS3 : démarrer', d: "Lis l'opgave en entier, puis fais tourner main.rkt tel quel. Note tes questions pour l'assistant. IA interdite pour cette taak (opgave, 5.1)." },
     { id: 'w11-6', c: 'log', m: 75, t: 'Predikaatlogica : tableaus', d: 'Oefeningen §3 : 1 à 3. Règles ∀ et ∃ sur ta fiche.' },
     { id: 'w11-3', c: 'scp1', m: 90, t: 'H8 ADTs (R7RS)', d: 'Écris un ADT set ou table + tests check-expect.' },
     { id: 'w11-5', c: 'ads1', m: 75, t: 'H5 Sorteren 1', d: 'Bubble, insertion, selection, quick : trace + complexité.' },
@@ -559,9 +561,11 @@ var WEEKS = [
   ] },
   { id: 'w12', n: 12, from: '2026-11-30', to: '2026-12-06', theme: 'Intégrales', note: 'Lundi 7/12 : StudyGPS à finir avant 8 h, puis TE2 de 9 h à 11 h. Fais le StudyGPS ce week-end.', tasks: [
     { id: 'w12-1', c: 'calc', m: 60, dl: 'gps3', pre: 'w11-2', t: 'StudyGPS Afgeleiden L2', d: 'Lundi 8 h : fais-le le week-end.' },
+    { id: 'w12-5', c: 'ads3', m: 75, t: 'H17 B+-bomen', d: '10 clés à la main + a-d/db/index/b-tree.' },
     { id: 'w12-2', c: 'calc', m: 90, t: 'WPO 4 Integralen', d: '5.5 : 14, 18, 26 · 5.6 : 5a, 18, 26, 33, 60, 78 · 8.2 : 2, 6, 22' },
     { id: 'w12-3', c: 'dw', m: 120, dl: 'te2', t: 'Préparer la TE2', d: 'Lundi 7/12, 9 h à 11 h. Vérifie la matière sur Canvas (sans doute H3 et H4), puis WPO seul, comme un mini-examen.' },
-    { id: 'w12-5', c: 'ads3', m: 75, t: 'H17 B+-bomen', d: '10 clés à la main + a-d/db/index/b-tree.' },
+    { id: 'w12-9', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 1', d: "But de la semaine : comprendre le code que cite l'opgave et écrire ton propre plan, sur papier." },
+    { id: 'w12-10', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 2', d: "Seul et sans IA. Une question ? Mail à l'assistant, jamais le jour de la deadline." },
     { id: 'w12-7', c: 'log', m: 75, t: 'Natuurlijke deductie (pred.)', d: '4 afleidingen seul : ∀I, ∀E, ∃I, ∃E.' },
     { id: 'w12-4', c: 'scp1', m: 90, t: 'SCP1 : chapitre du moment', d: 'WPO seul + 3 Dodona + un omgevingsmodel à la main.' },
     { id: 'w12-6', c: 'ads1', m: 75, t: 'H5 Sorteren 2', d: 'Merge, heap, radix, counting, bucket, borne n log n.' },
@@ -570,14 +574,16 @@ var WEEKS = [
   { id: 'w13', n: 13, from: '2026-12-07', to: '2026-12-13', theme: 'DV et lambda', note: 'StudyGPS lundi 14/12 à 8 h : fais-le ce week-end.', tasks: [
     { id: 'w13-1', c: 'calc', m: 60, dl: 'gps4', pre: 'w12-2', t: 'StudyGPS Integralen L1', d: 'Lundi 8 h : fais-le le week-end.' },
     { id: 'w13-2', c: 'calc', m: 75, t: 'WPO 5 DV 1re orde', d: 'Diffvgln 1 a, c · 2 a, c · 3 c · 4 c, d (avec le schéma DV).' },
-    { id: 'w13-5', c: 'ads3', m: 60, t: 'Projet ADS3 : lire et découper', d: 'Le jour où il sort : étapes datées en tâches perso + deadline.' },
+    { id: 'w13-5', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 3', d: 'But de la semaine : une version qui tourne avec main.rkt.' },
+    { id: 'w13-8', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 4', d: "Reprends là où tu t'es arrêté, et marque où tu en es avec ¼ ½ ¾." },
+    { id: 'w13-9', c: 'ads3', m: 90, t: 'Projet ADS3 · séance 5', d: "Relis l'opgave point par point : chaque exigence est-elle couverte et montrée dans main.rkt ?" },
     { id: 'w13-3', c: 'log', m: 90, t: 'Lambda-calculus 1', d: 'Oefeningen Lambda 1 à 9.' },
     { id: 'w13-4', c: 'scp1', m: 90, t: 'SCP1 : chapitre du moment', d: 'WPO seul + 3 Dodona.' },
     { id: 'w13-6', c: 'ads1', m: 75, t: 'H6 Bomen', d: 'BST insert et delete + les 4 rotations AVL.' },
     { id: 'w13-7', c: 'dw', m: 75, t: 'H4 Grafen 2', d: 'Bomen, bipartiet, planair, kleuren.' }
   ] },
-  { id: 'w14', n: 14, from: '2026-12-14', to: '2026-12-20', theme: 'Boucler', note: 'Dernière semaine de cours : pose toutes tes questions.', tasks: [
-    { id: 'w14-1', c: 'ads3', m: 120, dl: 'ads3proj', t: 'Projet ADS3 chaque jour', d: '45 à 90 min par jour. Fini et compris avant le 5/1.' },
+  { id: 'w14', n: 14, from: '2026-12-14', to: '2026-12-20', theme: 'Boucler', note: 'Dernière semaine de cours : pose toutes tes questions. Projet ADS3 : dimanche 20/12, 23 h 59.', tasks: [
+    { id: 'w14-1', c: 'ads3', m: 180, dl: 'ads3proj', t: 'Projet ADS3 : finir et déposer', d: "Démo dans main.rkt, puis le zip Prénom-Nom-matricule (une seule map : main.rkt + a-d). Teste-le avec seulement r7rs et a-d installés, puis dépose-le sur Canvas. Vise vendredi 18/12 : en retard = absent." },
     { id: 'w14-5', c: 'log', m: 75, t: 'Lambda-calculus 2', d: 'Church-getallen, Y-combinator, recursie.' },
     { id: 'w14-9', c: 'log', m: 120, t: 'Examen Logica 2025-26', d: 'Dans tes Téléchargements. Chronométré, sans notes, puis corrige.' },
     { id: 'w14-2', c: 'calc', m: 90, t: 'WPO 6', d: "Diffvgln 5 a, d, f · 6 b, c · 7 a, b · 8 b, c · l'Hôpital 4.6 : 4, 10, 27, 34" },
@@ -677,13 +683,13 @@ function normalizeSettings(raw) {
   return {
     exams: ex,
     te2: typeof raw.te2 === 'string' && raw.te2 !== '2026-12-07T08:00' ? raw.te2 : DEFAULT_TE2,
-    ads3: typeof raw.ads3 === 'string' ? raw.ads3 : ''
+    ads3: typeof raw.ads3 === 'string' && raw.ads3 ? raw.ads3 : DEFAULT_ADS3
   };
 }
 function deadlines(settings) {
   var list = FIXED_DEADLINES.map(function (x) { return Object.assign({}, x); });
   list.push({ id: 'te2', c: 'dw', short: 'TE2', t: 'TE2 Discrete wiskunde', at: settings.te2 || null, note: settings.te2 === DEFAULT_TE2 ? "jusqu'à 11 h" : '' });
-  list.push({ id: 'ads3proj', c: 'ads3', short: 'PROJ', t: 'Projet ADS3', at: settings.ads3 || null, note: settings.ads3 ? '' : 'sort après H16–H17' });
+  list.push({ id: 'ads3proj', c: 'ads3', short: 'PROJ', t: 'Projet ADS3', at: settings.ads3 || null, note: settings.ads3 === DEFAULT_ADS3 ? 'dépôt Canvas · en retard = absent' : '' });
   EXAM_KEYS.forEach(function (e) {
     var v = settings.exams[e.k];
     list.push({ id: 'ex-' + e.k, c: e.c, short: COURSES[e.c].code, t: e.t, at: v ? v + 'T' + e.time : null, exam: true, k: e.k, part: e.part });
@@ -904,7 +910,7 @@ var CHAPTERS = {
 };
 function fiche(id, a) { return 'https://caliweb.vub.be/?page=course-offer&id=' + id + '&anchor=' + a + '&target=pr&year=2627&language=nl&output=html'; }
 var INFO = {
-  ads3: { name: 'ADS3', note: 'Projet, écrit et pratique, chacun sur 20.', trap: 'Une partie sous 7 : note finale = la plus basse.', key: 'Le projet sort après H16–H17 : maîtrise le code a-d avant.', fiche: fiche('011807', 1) },
+  ads3: { name: 'ADS3', note: 'Projet, écrit et pratique, chacun sur 20.', trap: 'Une partie sous 7 : note finale = la plus basse.', key: 'Projet B+-tree sibling pointers : dimanche 20/12, 23 h 59, sans IA. À l’examen pratique, tu l’étends.', fiche: fiche('011807', 1) },
   log: { name: 'Logica', note: 'Écrit = 100 %. Théorie + exercice par partie.', trap: 'La lambda-calculus arrive en fin de semestre.', key: 'Modèles : TE 2025 et examen 2025-26.', fiche: fiche('009182', 2) },
   calc: { name: 'Calculus 1', note: 'Tentamen 24 % + StudyGPS 6 % du cours.', trap: 'Sous 8 : tout le cours à 7. Pas de reprise en juin.', key: '16/20 sur StudyGPS : ~6/20 au tentamen suffit pour 8.', fiche: fiche('009205', 1) },
   scp1: { name: 'SCP1', note: 'Écrit = 100 %. La TE ne change rien.', trap: 'Il faut écrire du code seul, pas relire.', key: 'Chaque semaine : WPO seul + 3 Dodona.', fiche: fiche('000085', 2) },
